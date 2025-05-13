@@ -1,0 +1,220 @@
+from manim import *
+import random
+import math
+import numpy as np  
+
+class EpidemicSimulation(Scene):
+    def construct(self):
+        
+        RAYON = 5
+        NB_POINTS = 50
+        NB_INFECTES_INIT = 3
+        RAYON_INFECTION = 0.5
+        PROBA_INFECTION = 0.5
+        PROBA_DEPLACEMENT = 0.3
+        PROBA_LATENT_VERS_INFECTIEUX =0.2
+        PROBA_GUERISON = 0.2
+        PAS = 30
+        NB_SIMULATIONS =100
+
+        
+        historiques_infections = []
+        historiques_sains =[]
+        historiques_exposes = []
+
+        
+        for indice_sim in range(NB_SIMULATIONS):
+            points = []
+            etats = []  # "S", "E", "I", "R"
+            positions_originales = []
+            historique_infections =[]
+            historique_sains = []
+            historique_exposes = []
+
+            pas_angle = TAU /NB_POINTS
+
+            
+            for i in range(NB_POINTS):
+                angle = i * pas_angle
+                pos = RAYON * np.array([math.cos(angle), math.sin(angle), 0])
+                dot = Dot(point=pos, color=GREEN, radius=0.1)
+                points.append(dot)
+                positions_originales.append(pos)
+                etats.append("S")
+
+           
+            indices_infectes = random.sample(range(NB_POINTS), NB_INFECTES_INIT)
+            for idx in indices_infectes:
+                points[idx].set_color(YELLOW)
+                etats[idx] = "E"
+
+            
+            if indice_sim == 0:
+                compteur = Integer(number=0, font_size=36).to_corner(UP + RIGHT)
+                etiquette_compteur = MarkupText("Infectes :", font_size=30).next_to(compteur, LEFT)
+                self.add(*points, etiquette_compteur, compteur)
+
+            
+            nb_infectes = sum(1 for s in etats if s== "I")
+            nb_sains = sum(1 for s in etats if s== "S")
+            nb_exposes = sum(1 for s in etats if s== "E")
+            historique_infections.append(nb_infectes)
+            historique_sains.append(nb_sains)
+            historique_exposes.append(nb_exposes)
+            if indice_sim == 0:
+                compteur.set_value(nb_infectes)
+
+            
+            def maj_points():
+                animations = []
+                nouveaux_etats = etats[:]
+                positions_futures = []
+
+                
+                for i, dot in enumerate(points):
+                    pos = dot.get_center()
+
+                    if np.allclose(pos, positions_originales[i]):
+                        cible = ORIGIN if random.random() < PROBA_DEPLACEMENT else pos
+                    else:
+                        cible = positions_originales[i]
+
+                    positions_futures.append(cible)
+
+                    def obtenir_mise_a_jour(depart, arrivee):
+                        return lambda mob, alpha: mob.move_to(
+                            interpolate(depart, arrivee, alpha)
+                        )
+
+                    if indice_sim == 0:
+                        animations.append(
+                            UpdateFromAlphaFunc(points[i], obtenir_mise_a_jour(pos, cible))
+                        )
+
+                
+                for i in range(NB_POINTS):
+                    if etats[i] != "I":
+                        continue
+                    for j in range(NB_POINTS):
+                        if etats[j] == "S":
+                            dist = np.linalg.norm(positions_futures[i] -positions_futures[j])
+                            if dist < RAYON_INFECTION and random.random() <PROBA_INFECTION:
+                                nouveaux_etats[j] = "E"
+
+                
+                for i in range(NB_POINTS):
+                    if etats[i] == "E" and random.random() < PROBA_LATENT_VERS_INFECTIEUX:
+                        nouveaux_etats[i] = "I"
+                    if etats[i] == "I" and random.random() < PROBA_GUERISON:
+                        nouveaux_etats[i] = "R"
+
+                return animations, nouveaux_etats
+
+           
+            for _ in range(PAS):
+                animations, nouveaux_etats = maj_points()
+                if indice_sim == 0:
+                    self.play(*animations, run_time=0.5)
+
+               
+                for i, etat in enumerate(nouveaux_etats):
+                    if etat != etats[i]:
+                        etats[i] = etat
+                        if etat == "I":
+                            points[i].set_color(RED)
+                        elif etat == "E":
+                            points[i].set_color(YELLOW)
+                        elif etat == "R":
+                            points[i].set_color(BLUE)
+                        else:
+                            points[i].set_color(GREEN)
+
+                
+                nb_infectes = sum(1 for s in etats if s == "I")
+                nb_sains = sum(1 for s in etats if s == "S")
+                nb_exposes = sum(1 for s in etats if s == "E")
+                historique_infections.append(nb_infectes)
+                historique_sains.append(nb_sains)
+                historique_exposes.append(nb_exposes)
+                if indice_sim == 0:
+                    compteur.set_value(nb_infectes)
+
+            historiques_infections.append(historique_infections)
+            historiques_sains.append(historique_sains)
+            historiques_exposes.append(historique_exposes)
+
+        
+        moyenne_infections = [
+            sum(hist[i] for hist in historiques_infections) / NB_SIMULATIONS
+            for i in range(PAS + 1)
+        ]
+        moyenne_sains = [
+            sum(hist[i] for hist in historiques_sains) / NB_SIMULATIONS
+            for i in range(PAS + 1)
+        ]
+        moyenne_exposes = [
+            sum(hist[i] for hist in historiques_exposes) / NB_SIMULATIONS
+            for i in range(PAS + 1)
+        ]
+
+        
+        S, E, I, R = [NB_POINTS - NB_INFECTES_INIT], [NB_INFECTES_INIT], [0.0], [0.0]
+        n = PROBA_DEPLACEMENT**2*19
+        p = PROBA_INFECTION
+        BETA = n*p
+        SIGMA = PROBA_LATENT_VERS_INFECTIEUX
+        GAMMA = PROBA_GUERISON
+
+        for _ in range(PAS):
+            s = S[-1]
+            e = E[-1]
+            i = I[-1]
+            r = R[-1]
+
+            nouveaux_exposes = BETA* s * i / NB_POINTS
+            nouveaux_infectieux = SIGMA * e
+            nouveaux_recuperes = GAMMA *i
+
+            S.append(s - nouveaux_exposes)
+            E.append(e + nouveaux_exposes - nouveaux_infectieux)
+            I.append(i + nouveaux_infectieux - nouveaux_recuperes)
+            R.append(r + nouveaux_recuperes)
+
+        self.clear()  
+
+       
+        def creer_graphe(titre, donnees_sim, donnees_modele, couleur_sim, couleur_modele, ylabel):
+            axes = Axes(
+                x_range=[0, PAS],
+                y_range=[0, NB_POINTS],
+                axis_config={"include_numbers": True},
+            ).scale(0.8).to_edge(DOWN)
+            labels = axes.get_axis_labels(x_label="Temps", y_label=ylabel)
+            courbe_sim = axes.plot_line_graph(
+                x_values=list(range(PAS + 1)),
+                y_values=donnees_sim,
+                line_color=couleur_sim,
+                add_vertex_dots=False,
+            )
+            courbe_modele = axes.plot_line_graph(
+                x_values=list(range(PAS + 1)),
+                y_values=[x for x in donnees_modele],
+                line_color=couleur_modele,
+                add_vertex_dots=False,
+            )
+            legende = VGroup(
+                Dot(color=couleur_sim),
+                Text(f"Moy Sim {ylabel[0]}", font_size=24),
+                Dot(color=couleur_modele),
+                Text(f"Mod SIER {ylabel[0]}", font_size=24),
+            ).arrange_in_grid(rows=1, cols=4, buff=0.3).next_to(axes, DOWN)
+
+            self.play(Create(axes), Write(labels))
+            self.play(Create(courbe_sim), Create(courbe_modele), FadeIn(legende))
+            self.wait(10)
+            self.clear()
+
+       
+        creer_graphe("Infectes", moyenne_infections, I, RED, BLUE, "Infectes")
+        creer_graphe("Sains",     moyenne_sains,      S, GREEN, YELLOW, "Sains")
+        creer_graphe("Exposes",   moyenne_exposes,    E, ORANGE, PURPLE, "Exposes")
