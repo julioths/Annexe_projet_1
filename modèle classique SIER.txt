@@ -47,9 +47,6 @@ class EpidemicSimulation(Scene):
     return(sum(s=="I"for s in etats),sum(s=="S"for s in etats),sum(s=="E"for s in etats))
 
 
-
-
-
    ni,ns,ne=compter()
    hist_I.append(ni)
    hist_S.append(ns)
@@ -144,5 +141,5 @@ class EpidemicSimulation(Scene):
 
        
         creer_graphe("Infectes", moyenne_infections, I, RED, BLUE, "Infectes")
-        creer_graphe("Sains",     moyenne_sains,      S, GREEN, YELLOW, "Sains")
-        creer_graphe("Exposes",   moyenne_exposes,    E, ORANGE, PURPLE, "Exposes")
+        creer_graphe("Sains",moyenne_sains,S, GREEN, YELLOW, "Sains")
+        creer_graphe("Exposes",moyenne_exposes,E, ORANGE, PURPLE, "Exposes")
