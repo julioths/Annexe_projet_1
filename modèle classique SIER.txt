@@ -79,9 +79,9 @@ class EpidemicSimulation(Scene):
      elif etats[i]=="I"and random.random()<P_GUERISON:
       etats_nouveaux[i]="R"
 
-    return animations,etats_nouveaux
+    return (animations,etats_nouveaux)
 
-   for _ in range(PAS):
+   for p in range(PAS):
     animations,nouveaux=maj_points()
     if sim==0:self.play(*animations,run_time=0.5)
     for i,etat in enumerate(nouveaux):
@@ -100,12 +100,8 @@ class EpidemicSimulation(Scene):
 
   
   
-  
   def moyenne(hist):
    return[sum(h[i]for h in hist)/N_SIMULATIONS for i in range(PAS+1)]
-
-
-
 
 
   I_moy,S_moy,E_moy=moyenne(historiques_I),moyenne(historiques_S),moyenne(historiques_E)
@@ -114,7 +110,7 @@ class EpidemicSimulation(Scene):
   sigma=P_E_VERS_I
   gamma=P_GUERISON
 
-  for _ in range(PAS):
+  for q in range(PAS):
    s,e,i,r=S[-1],E[-1],I[-1],R[-1]
    new_E=beta*s*i/N
    new_I=sigma*e
@@ -138,8 +134,6 @@ class EpidemicSimulation(Scene):
   tracer_courbe("Infectes",I_moy,I,RED,BLUE,"Infectes")
   tracer_courbe("Sains",S_moy,S,GREEN,YELLOW,"Sains")
   tracer_courbe("Exposes",E_moy,E,ORANGE,PURPLE,"Exposes")
-
-       
         creer_graphe("Infectes", moyenne_infections, I, RED, BLUE, "Infectes")
         creer_graphe("Sains",moyenne_sains,S, GREEN, YELLOW, "Sains")
         creer_graphe("Exposes",moyenne_exposes,E, ORANGE, PURPLE, "Exposes")
