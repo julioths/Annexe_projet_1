@@ -32,6 +32,7 @@ class EpidemicSimulation(Scene):
     positions_init.append(pos)
     etats.append("S")
 
+
    for idx in random.sample(range(N),N_INFECTES_INIT):
     points[idx].set_color(YELLOW)
     etats[idx]="E"
@@ -105,6 +106,8 @@ class EpidemicSimulation(Scene):
 
 
   I_moy,S_moy,E_moy=moyenne(historiques_I),moyenne(historiques_S),moyenne(historiques_E)
+
+
   S,E,I,R=[N-N_INFECTES_INIT],[N_INFECTES_INIT],[0.0],[0.0]
   beta=(P_DEPLACEMENT**2)*19*P_INFECTION
   sigma=P_E_VERS_I
