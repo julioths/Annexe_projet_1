@@ -85,7 +85,7 @@ class EpidemicSimulation(Scene):
    for p in range(PAS):
     animations,nouveaux=maj_points()
     if sim==0:self.play(*animations,run_time=0.5)
-# Remarque : on ne joue que la première pcq sinon les videos durent trop longtemps (c'est pareil pour les autres modèles agents) c'est un choix arbitraire j'avais d'abord construit le programme pour tout jouer et la fonction maj sauvgarde bien toutes les animations meme si ce n'est pas utile
+# Remarque : on ne joue que la première pcq sinon les videos durent trop longtemps (c'est pareil pour les autres modèles agents) 
     for i,etat in enumerate(nouveaux):
      if etat!=etats[i]:
       etats[i]=etat
